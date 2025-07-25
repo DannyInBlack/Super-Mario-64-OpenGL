@@ -11,24 +11,21 @@ using namespace std;
 
 // Window parameters
 #define WINDOW_SIZE 1200, 800
-#define WINDOW_NAME "211010447"
+#define WINDOW_NAME "Super Mario Remade"
 #define WINDOW_POSITION 200, 0
 
 // Player X and Player Y represent player coordinates on the screen
 double playerX = 6 * B_SIZE + 8, playerY = 2 * B_SIZE;
-// Represents key inputs from user
+double moveStateX = 0;  // speed in the x-direction
+double moveStateY = 0;  // speed in the y-direction
+// Offset is used to determine how much the player had moved in the last frame
+double offset = playerX;
 bool rightPressed = false, leftPressed = false, upPressed = false;
-// Player on-ground state, helps with other logic
 bool onGround = true;
-// If game is paused, paused = true
 bool paused = false;
 // If player is centered, level moves instead of player
 bool centered = false;
-// Offset is used to determine how much the player had moved in the last frame
-double offset = playerX;
-
-double moveStateX = 0;  // moving state, represents movement in the x-direction
-double moveStateY = 0;  // moving state, represents movement in the y-direction
+bool leveledUp = false;
 
 // List of levels implemented
 vector<Level> levels;
@@ -61,16 +58,7 @@ void display(void) {
   glutSwapBuffers();
 }
 
-void timer(int) {
-  // Call the display function
-  glutPostRedisplay();
-  // 60 frames per second
-  glutTimerFunc(1000 / 60, timer, 0);
-  // Do not handle player movement if paused
-  if (paused) return;
-
-  // Player can only jump if touching the ground
-  if (upPressed && onGround) moveStateY = 10.0;
+void handle_player_movement(){
 
   // Setting offset to past playerX value, to calculate the difference
   offset = playerX;
@@ -127,8 +115,14 @@ void timer(int) {
     levels[current_level].set_player_state(stopped);
   }
 
+  // Player can only jump if touching the ground
+  if (upPressed && onGround){
+    if (!leveledUp) moveStateY = 7.0;
+    else moveStateY = 8.0;
+  }
+  
   // Repeat the same thing for the Y direction
-  playerY += 0.3 * moveStateY;
+  playerY += 0.5 * moveStateY;
   levels[current_level].edit_player(playerX, playerY);
 
   if (levels[current_level].ground_coll()) {
@@ -161,6 +155,17 @@ void timer(int) {
   if (!onGround) {
     moveStateY = max(moveStateY - 0.2, -10.0);
   }
+}
+
+void timer(int) {
+  // Call the display function
+  glutPostRedisplay();
+  // 60 frames per second
+  glutTimerFunc(1000 / 60, timer, 0);
+  // Do not handle player movement if paused
+  if (paused) return;
+
+  handle_player_movement();
 
   // Centered checking
   centered |= playerX > 186 && playerX < 189;
